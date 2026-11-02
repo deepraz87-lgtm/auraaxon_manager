@@ -6,6 +6,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../system_design/views/system_design_page.dart';
 import '../../protech_manager/views/protech_manager_page.dart';
 import '../../whatsapp_server/views/whatsapp_server_page.dart';
+import '../../aura_operations/views/aura_operations_hub_page.dart';
 
 class _DestinationItem {
   final String title;
@@ -32,6 +33,7 @@ class _MainDashboardScreenState extends ConsumerState<MainDashboardScreen> {
     _DestinationItem('Architecture', Icons.architecture_outlined, Icons.architecture),
     _DestinationItem('Protech Manager', Icons.business_center_outlined, Icons.business_center),
     _DestinationItem('WhatsApp AI', Icons.message_outlined, Icons.message),
+    _DestinationItem('Aura AI Ops', Icons.hub_outlined, Icons.hub),
     _DestinationItem('Settings', Icons.settings_outlined, Icons.settings),
   ];
 
@@ -44,6 +46,7 @@ class _MainDashboardScreenState extends ConsumerState<MainDashboardScreen> {
     const SystemDesignPage(),
     const ProtechManagerPage(),
     const WhatsAppServerPage(),
+    const AuraOperationsHubPage(),
     const Center(child: Text('Settings', style: TextStyle(fontSize: 24))),
   ];
 
