@@ -2,9 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/business_type_provider.dart';
 import '../models/business_type_model.dart';
+import 'demo_leads_view.dart';
 
-class ProtechManagerPage extends ConsumerWidget {
+class ProtechManagerPage extends ConsumerStatefulWidget {
   const ProtechManagerPage({super.key});
+
+  @override
+  ConsumerState<ProtechManagerPage> createState() => _ProtechManagerPageState();
+}
+
+class _ProtechManagerPageState extends ConsumerState<ProtechManagerPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   final List<String> availableTabs = const [
     'Dashboard',
@@ -17,18 +38,21 @@ class ProtechManagerPage extends ConsumerWidget {
     'AI Agent',
   ];
 
-  void _showBusinessTypeDialog(BuildContext context, WidgetRef ref, {BusinessTypeModel? existingType}) {
+  void _showBusinessTypeDialog(BuildContext context, {BusinessTypeModel? existingType}) {
     final nameController = TextEditingController(text: existingType?.name ?? '');
     final Set<String> selectedTabs = Set<String>.from(existingType?.allowedTabs ?? []);
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogCtx) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: const Color(0xFF252538),
-              title: Text(existingType == null ? 'Add Business Type' : 'Edit Business Type', style: const TextStyle(color: Colors.white)),
+              title: Text(
+                existingType == null ? 'Add Business Type' : 'Edit Business Type',
+                style: const TextStyle(color: Colors.white),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -41,7 +65,7 @@ class ProtechManagerPage extends ConsumerWidget {
                         focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.blueAccent)),
                       ),
                       style: const TextStyle(color: Colors.white),
-                      enabled: existingType == null, // Name cannot be edited for existing types since it's the ID
+                      enabled: existingType == null,
                     ),
                     const SizedBox(height: 16),
                     const Text('Allowed Tabs:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -53,7 +77,7 @@ class ProtechManagerPage extends ConsumerWidget {
                         checkColor: Colors.white,
                         activeColor: Colors.blueAccent,
                         onChanged: (bool? value) {
-                          setState(() {
+                          setDialogState(() {
                             if (value == true) {
                               selectedTabs.add(tab);
                             } else {
@@ -68,7 +92,7 @@ class ProtechManagerPage extends ConsumerWidget {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pop(dialogCtx),
                   child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
                 ),
                 ElevatedButton(
@@ -76,7 +100,7 @@ class ProtechManagerPage extends ConsumerWidget {
                     final name = nameController.text.trim();
                     if (name.isNotEmpty) {
                       final newType = BusinessTypeModel(
-                        id: name, // Using name as ID
+                        id: name,
                         name: name,
                         allowedTabs: selectedTabs.toList(),
                       );
@@ -86,7 +110,7 @@ class ProtechManagerPage extends ConsumerWidget {
                       } else {
                         ref.read(businessTypeControllerProvider).updateBusinessType(newType);
                       }
-                      Navigator.pop(context);
+                      Navigator.pop(dialogCtx);
                     }
                   },
                   child: Text(existingType == null ? 'Add' : 'Save'),
@@ -99,24 +123,24 @@ class ProtechManagerPage extends ConsumerWidget {
     );
   }
 
-  void _deleteBusinessType(BuildContext context, WidgetRef ref, String id) {
+  void _deleteBusinessType(BuildContext context, String id) {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogCtx) {
         return AlertDialog(
           backgroundColor: const Color(0xFF252538),
           title: const Text('Delete Business Type', style: TextStyle(color: Colors.white)),
           content: Text('Are you sure you want to delete "$id"?', style: const TextStyle(color: Colors.white70)),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogCtx),
               child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
               onPressed: () {
                 ref.read(businessTypeControllerProvider).deleteBusinessType(id);
-                Navigator.pop(context);
+                Navigator.pop(dialogCtx);
               },
               child: const Text('Delete', style: TextStyle(color: Colors.white)),
             ),
@@ -127,7 +151,7 @@ class ProtechManagerPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final businessTypesAsync = ref.watch(businessTypeStreamProvider);
 
     return Scaffold(
@@ -140,113 +164,147 @@ class ProtechManagerPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (isMobile) ...[
-                  const Text(
-                    'Protech Manager',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => _showBusinessTypeDialog(context, ref),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Business Type'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Protech Manager',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () => _showBusinessTypeDialog(context, ref),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add Business Type'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6C63FF),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Protech Manager Hub',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isMobile ? 22 : 28,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Manage POS configurations & live demo customer inquiries',
+                          style: TextStyle(color: Colors.white54, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => _showBusinessTypeDialog(context),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Business Type'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6C63FF),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isMobile ? 14 : 20,
+                          vertical: isMobile ? 10 : 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF252538),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicatorColor: const Color(0xFF6C63FF),
+                    indicatorWeight: 3,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white54,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    tabs: const [
+                      Tab(
+                        icon: Icon(Icons.hub_outlined),
+                        text: 'Business Types & Tabs',
+                      ),
+                      Tab(
+                        icon: Icon(Icons.contact_mail_outlined),
+                        text: 'Live Demo Leads & Inquiries',
                       ),
                     ],
                   ),
-                ],
-                SizedBox(height: isMobile ? 16 : 32),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF252538),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white12),
                 ),
-                child: businessTypesAsync.when(
-                  data: (types) => types.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No business types found.',
-                            style: TextStyle(color: Colors.white54, fontSize: 16),
-                          ),
-                        )
-                      : ListView.separated(
-                          itemCount: types.length,
-                          separatorBuilder: (context, index) => const Divider(color: Colors.white12, height: 1),
-                          itemBuilder: (context, index) {
-                            final type = types[index];
-                            return ListTile(
-                              title: Text(type.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              subtitle: Text(
-                                'Allowed Tabs: ${type.allowedTabs.join(', ')}',
-                                style: const TextStyle(color: Colors.white54),
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit, color: Colors.blueAccent),
-                                    onPressed: () => _showBusinessTypeDialog(context, ref, existingType: type),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.redAccent),
-                                    onPressed: () => _deleteBusinessType(context, ref, type.id),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                const SizedBox(height: 16),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF252538),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white12),
                         ),
-                  loading: () => const Center(child: CircularProgressIndicator(color: Colors.blueAccent)),
-                  error: (err, stack) => Center(
-                    child: Text('Error: $err', style: const TextStyle(color: Colors.redAccent)),
+                        child: businessTypesAsync.when(
+                          data: (types) => types.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    'No business types found.',
+                                    style: TextStyle(color: Colors.white54, fontSize: 16),
+                                  ),
+                                )
+                              : ListView.separated(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: types.length,
+                                  separatorBuilder: (context, index) => const Divider(color: Colors.white12),
+                                  itemBuilder: (context, index) {
+                                    final type = types[index];
+                                    return ListTile(
+                                      title: Text(
+                                        type.name,
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                      ),
+                                      subtitle: Padding(
+                                        padding: const EdgeInsets.only(top: 8.0),
+                                        child: Wrap(
+                                          spacing: 6,
+                                          runSpacing: 6,
+                                          children: type.allowedTabs.map((tab) {
+                                            return Chip(
+                                              label: Text(tab, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                              backgroundColor: Colors.white.withOpacity(0.08),
+                                              padding: EdgeInsets.zero,
+                                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                                            onPressed: () => _showBusinessTypeDialog(context, existingType: type),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                            onPressed: () => _deleteBusinessType(context, type.id),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (error, stack) => Center(
+                            child: Text(
+                              'Error: $error',
+                              style: const TextStyle(color: Colors.redAccent),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const DemoLeadsView(),
+                    ],
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      );
-    },
-  ),
-);
-}
+          );
+        },
+      ),
+    );
+  }
 }
