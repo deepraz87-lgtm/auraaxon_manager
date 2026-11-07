@@ -1,32 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import '../services/pos_firebase_service.dart';
 
-class ProTechLeadsService {
-  static FirebaseApp? _posApp;
-
-  static Future<FirebaseFirestore> getPosFirestore() async {
-    if (_posApp == null) {
-      try {
-        _posApp = Firebase.app('POS_PROJECT');
-      } catch (_) {
-        _posApp = await Firebase.initializeApp(
-          name: 'POS_PROJECT',
-          options: const FirebaseOptions(
-            apiKey: 'AIzaSyC4kUTH8yXd-Ot5jLKIXijEW90h5rsWp_I',
-            appId: '1:226275864520:web:b741894fb2d85f30ae5afd',
-            messagingSenderId: '226275864520',
-            projectId: 'pos-system-1-49ec7',
-            authDomain: 'pos-system-1-49ec7.firebaseapp.com',
-            storageBucket: 'pos-system-1-49ec7.firebasestorage.app',
-          ),
-        );
-      }
-    }
-    return FirebaseFirestore.instanceFor(app: _posApp!);
-  }
-}
 
 class DemoLeadModel {
   final String id;
@@ -82,7 +59,7 @@ class _DemoLeadsViewState extends State<DemoLeadsView> {
   @override
   void initState() {
     super.initState();
-    _firestoreFuture = ProTechLeadsService.getPosFirestore();
+    _firestoreFuture = PosFirebaseService.getFirestore();
   }
 
   Color _getCategoryColor(String type) {
@@ -432,3 +409,4 @@ class _DemoLeadsViewState extends State<DemoLeadsView> {
     );
   }
 }
+

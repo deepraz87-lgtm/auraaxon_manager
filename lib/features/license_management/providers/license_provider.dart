@@ -1,17 +1,18 @@
 ﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/license_model.dart';
+import '../../protech_manager/services/pos_firebase_service.dart';
 
 // Live stream of licenses from Firestore
-final licenseStreamProvider = StreamProvider<List<LicenseModel>>((ref) {
-  return FirebaseFirestore.instance
+final licenseStreamProvider = StreamProvider<List<LicenseModel>>((ref) async* {
+  final firestore = await PosFirebaseService.getFirestore();
+  yield* firestore
       .collection('business_profiles')
       .snapshots()
       .map((snapshot) {
         final List<LicenseModel> licenses = [];
         for (final doc in snapshot.docs) {
           try {
-            // Some corrupted or phantom documents might throw a null check error internally in cloud_firestore
             final data = (doc.data() as Map<String, dynamic>?) ?? {};
             licenses.add(LicenseModel(
               id: doc.id,
@@ -28,10 +29,10 @@ final licenseStreamProvider = StreamProvider<List<LicenseModel>>((ref) {
 });
 
 class LicenseController {
-  // License Suspend හෝ Activate කිරීම සඳහා
   Future<void> toggleLicenseStatus(String id, bool currentStatus) async {
     try {
-      await FirebaseFirestore.instance
+      final firestore = await PosFirebaseService.getFirestore();
+      await firestore
           .collection('business_profiles')
           .doc(id)
           .set({'isActive': !currentStatus}, SetOptions(merge: true));
@@ -40,16 +41,16 @@ class LicenseController {
     }
   }
 
-  // License සහ Profile එක සම්පූර්ණයෙන්ම Firebase එකෙන් මකා දැමීම (Delete)
   Future<void> deleteLicense(String id) async {
     try {
-      await FirebaseFirestore.instance
+      final firestore = await PosFirebaseService.getFirestore();
+      await firestore
           .collection('business_profiles')
           .doc(id)
           .delete();
 
       try {
-        await FirebaseFirestore.instance
+        await firestore
             .collection('settings')
             .doc(id)
             .delete();
