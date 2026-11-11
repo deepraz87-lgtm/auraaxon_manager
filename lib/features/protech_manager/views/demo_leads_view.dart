@@ -11,6 +11,7 @@ class DemoLeadModel {
   final String businessType;
   final String phone;
   final String address;
+  final String agentId;
   final DateTime? timestamp;
   final String status;
 
@@ -20,6 +21,7 @@ class DemoLeadModel {
     required this.businessType,
     required this.phone,
     required this.address,
+    this.agentId = '',
     this.timestamp,
     this.status = 'New',
   });
@@ -38,6 +40,7 @@ class DemoLeadModel {
       businessType: data['businessType'] ?? 'General',
       phone: data['phone'] ?? '',
       address: data['address'] ?? '',
+      agentId: data['agentId'] ?? '',
       timestamp: time,
       status: data['status'] ?? 'New',
     );
@@ -332,6 +335,15 @@ class _DemoLeadsViewState extends State<DemoLeadsView> {
                                                 Text(
                                                   lead.address,
                                                   style: const TextStyle(color: Colors.white54, fontSize: 13),
+                                                ),
+                                                const SizedBox(width: 16),
+                                              ],
+                                              if (lead.agentId.isNotEmpty) ...[
+                                                const Icon(Icons.badge_outlined, size: 14, color: Colors.amberAccent),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'Agent: ${lead.agentId}',
+                                                  style: const TextStyle(color: Colors.amberAccent, fontSize: 13, fontWeight: FontWeight.w600),
                                                 ),
                                               ],
                                             ],

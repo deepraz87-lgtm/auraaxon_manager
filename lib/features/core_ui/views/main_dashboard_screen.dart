@@ -7,6 +7,7 @@ import '../../system_design/views/system_design_page.dart';
 import '../../protech_manager/views/protech_manager_page.dart';
 import '../../whatsapp_server/views/whatsapp_server_page.dart';
 import '../../aura_operations/views/aura_operations_hub_page.dart';
+import '../../aura_agents/agents_management_page.dart';
 
 class _DestinationItem {
   final String title;
@@ -29,6 +30,7 @@ class _MainDashboardScreenState extends ConsumerState<MainDashboardScreen> {
   static const List<_DestinationItem> _destinations = [
     _DestinationItem('Licenses', Icons.vpn_key_outlined, Icons.vpn_key),
     _DestinationItem('Products', Icons.inventory_2_outlined, Icons.inventory),
+    _DestinationItem('Aura Agents', Icons.groups_outlined, Icons.groups),
     _DestinationItem('Analytics', Icons.analytics_outlined, Icons.analytics),
     _DestinationItem('Architecture', Icons.architecture_outlined, Icons.architecture),
     _DestinationItem('Protech Manager', Icons.business_center_outlined, Icons.business_center),
@@ -40,14 +42,15 @@ class _MainDashboardScreenState extends ConsumerState<MainDashboardScreen> {
   final List<Widget> _pages = [
     const LicensesPage(),
     const ProductsPage(),
+    const AgentsManagementPage(),
     const Center(
-      child: Text('Marketing Analytics', style: TextStyle(fontSize: 24)),
+      child: Text('Marketing Analytics', style: TextStyle(fontSize: 24, color: Colors.white)),
     ),
     const SystemDesignPage(),
     const ProtechManagerPage(),
     const WhatsAppServerPage(),
     const AuraOperationsHubPage(),
-    const Center(child: Text('Settings', style: TextStyle(fontSize: 24))),
+    const Center(child: Text('Settings', style: TextStyle(fontSize: 24, color: Colors.white))),
   ];
 
   @override
