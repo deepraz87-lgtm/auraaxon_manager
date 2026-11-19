@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "226275864520",
-    "project_id": "pos-system-1-49ec7",
-    "storage_bucket": "pos-system-1-49ec7.firebasestorage.app"
+    "project_number": "884607146417",
+    "project_id": "auraaxon-manager",
+    "storage_bucket": "auraaxon-manager.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:226275864520:android:336b2ad21478bb95ae5afd",
+        "mobilesdk_app_id": "1:884607146417:android:fa0008a34cdb7fe183c590",
         "android_client_info": {
           "package_name": "com.example.auraaxon_manager"
         }
@@ -15,45 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDOSX1czHMondjUGH87fo7h6AAg5wY5PdU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:226275864520:android:f8d92c7b1e5b16ceae5afd",
-        "android_client_info": {
-          "package_name": "com.example.pos_mobile_app"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDOSX1czHMondjUGH87fo7h6AAg5wY5PdU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:226275864520:android:48a1cb86821b5e3fae5afd",
-        "android_client_info": {
-          "package_name": "com.example.pos_system_1"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDOSX1czHMondjUGH87fo7h6AAg5wY5PdU"
+          "current_key": "AIzaSyCZhhhNekmTEOz-2fH27Ro_60eZlg2Exzk"
         }
       ],
       "services": {

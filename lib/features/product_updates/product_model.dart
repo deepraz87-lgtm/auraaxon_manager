@@ -23,19 +23,18 @@ class ProductModel {
     required this.imageUrl,
   });
 
-  // API එකෙන් ලැබෙන JSON දත්ත Model එකක් බවට පත් කිරීමට
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? 'Unknown',
-      version: json['version']?.toString() ?? 'Unknown',
-      status: json['status']?.toString() ?? 'Unknown',
-      releaseDate: json['releaseDate']?.toString() ?? 'Unknown',
+      version: json['version']?.toString() ?? 'v1.0.0',
+      status: json['status']?.toString() ?? 'Active',
+      releaseDate: (json['releaseDate'] ?? json['release_date'])?.toString() ?? '',
       category: json['category']?.toString() ?? 'Software',
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
-      monthlyFee: double.tryParse(json['monthly_fee']?.toString() ?? '0') ?? 0.0,
+      monthlyFee: double.tryParse((json['monthly_fee'] ?? json['monthlyFee'])?.toString() ?? '0') ?? 0.0,
       description: json['description']?.toString() ?? '',
-      imageUrl: json['image_url']?.toString() ?? '',
+      imageUrl: (json['image_url'] ?? json['imageUrl'])?.toString() ?? '',
     );
   }
 }

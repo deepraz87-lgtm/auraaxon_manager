@@ -50,8 +50,8 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBQtPqVghjC7lTgOT6OPn4A4oyiA0LqxLI',
-    appId: '1:884607146417:web:2ea72a49e8c3850283c590',
+    apiKey: 'AIzaSyCZhhhNekmTEOz-2fH27Ro_60eZlg2Exzk',
+    appId: '1:884607146417:android:fa0008a34cdb7fe183c590',
     messagingSenderId: '884607146417',
     projectId: 'auraaxon-manager',
     storageBucket: 'auraaxon-manager.firebasestorage.app',

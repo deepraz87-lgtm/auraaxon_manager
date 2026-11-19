@@ -1,36 +1,121 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="AuraAxon Manager - Software & Hardware Technology Operations Portal">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="auraaxon_manager">
+  <meta name="apple-mobile-web-app-title" content="AuraAxon Manager">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico"/>
 
-  <title>auraaxon_manager</title>
+  <title>AuraAxon Manager</title>
   <link rel="manifest" href="manifest.json">
+  <script>
+    window.requestAuraNotificationPermission = function(callback) {
+      if (!('Notification' in window)) {
+        if (typeof callback === 'function') callback('unsupported');
+        return Promise.resolve('unsupported');
+      }
+      if (Notification.permission === 'denied') {
+        if (typeof callback === 'function') callback('denied');
+        return Promise.resolve('denied');
+      }
+      try {
+        const p = Notification.requestPermission(function(perm) {
+          if (typeof callback === 'function') callback(perm);
+        });
+        if (p && typeof p.then === 'function') {
+          p.then(function(perm) {
+            if (typeof callback === 'function') callback(perm);
+          }).catch(function(e) {
+            if (typeof callback === 'function') callback('denied');
+          });
+        }
+        return p;
+      } catch (err) {
+        if (typeof callback === 'function') callback('denied');
+        return Promise.resolve('denied');
+      }
+    };
+
+    window.showAuraSystemNotification = function(title, body, iconUrl) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') {
+        return;
+      }
+      const icon = iconUrl || 'icons/Icon-192.png';
+      const options = {
+        body: body,
+        icon: icon,
+        badge: icon,
+        vibrate: [200, 100, 200],
+        tag: 'aura-agent-alert',
+        renotify: true
+      };
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then(function(reg) {
+          if (reg && reg.showNotification) {
+            reg.showNotification(title, options);
+          } else {
+            try {
+              const n = new Notification(title, options);
+              n.onclick = function() { window.focus(); this.close(); };
+            } catch (e) {
+              console.warn('Fallback Notification failed:', e);
+            }
+          }
+        }).catch(function() {
+          try {
+            const n = new Notification(title, options);
+            n.onclick = function() { window.focus(); this.close(); };
+          } catch (e) {
+            console.warn('Fallback Notification failed:', e);
+          }
+        });
+      } else {
+        try {
+          const n = new Notification(title, options);
+          n.onclick = function() { window.focus(); this.close(); };
+        } catch (e) {
+          console.warn('Direct Notification failed:', e);
+        }
+      }
+    };
+
+    window.playAuraChime = function() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        const now = ctx.currentTime;
+        osc.frequency.setValueAtTime(587.33, now); // D5
+        osc.frequency.setValueAtTime(880.00, now + 0.12); // A5
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+        osc.start(now);
+        osc.stop(now + 0.55);
+      } catch (e) {
+        console.warn('Audio chime notice:', e);
+      }
+    };
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

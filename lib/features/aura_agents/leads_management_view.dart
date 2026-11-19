@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'responsive_helpers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'lead_model.dart';
@@ -171,6 +172,52 @@ class _LeadsManagementViewState extends ConsumerState<LeadsManagementView> {
               ],
               const SizedBox(height: 8),
               _detailRow(Icons.location_on_outlined, 'Territory / Region', lead.territory),
+              if (lead.hasCoordinates) ...[
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.my_location_rounded, size: 16, color: Color(0xFF2EC4B6)),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Verified GPS: ',
+                        style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      Expanded(
+                        child: Text(
+                          lead.coordinatesDisplay,
+                          style: const TextStyle(color: Color(0xFF2EC4B6), fontSize: 12.5, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () async {
+                          final uri = Uri.parse(lead.mapsUrl);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2EC4B6).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFF2EC4B6)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.map_outlined, size: 13, color: Color(0xFF2EC4B6)),
+                              SizedBox(width: 4),
+                              Text('View on Google Maps', style: TextStyle(color: Color(0xFF2EC4B6), fontSize: 11, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
               _detailRow(Icons.inventory_2_outlined, 'Software Package', lead.softwarePackage),
               const SizedBox(height: 8),
@@ -226,11 +273,84 @@ class _LeadsManagementViewState extends ConsumerState<LeadsManagementView> {
                     icon: const Icon(Icons.edit_note, size: 16, color: Color(0xFF6C63FF)),
                     label: const Text('Update Status', style: TextStyle(color: Color(0xFF6C63FF), fontSize: 12)),
                   ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _confirmDeleteLead(context, lead);
+                    },
+                    icon: const Icon(Icons.delete_outline, size: 15, color: Color(0xFFEF476F)),
+                    label: const Text('Delete Lead', style: TextStyle(color: Color(0xFFEF476F), fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFEF476F)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
                 ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _confirmDeleteLead(BuildContext context, AxonLeadModel lead) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF252538),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF476F).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.delete_forever_rounded, color: Color(0xFFEF476F), size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Delete Lead',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to permanently delete the sales opportunity for "${lead.companyName}" (${lead.softwarePackage})?',
+          style: const TextStyle(color: Colors.white70, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await AuraAgentFirebaseService.deleteLead(lead.id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Lead "${lead.companyName}" deleted successfully.'),
+                    backgroundColor: const Color(0xFFEF476F),
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.delete, size: 16),
+            label: const Text('Delete Lead'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF476F),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -256,48 +376,154 @@ class _LeadsManagementViewState extends ConsumerState<LeadsManagementView> {
   }
 
   Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF252538),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
+    return buildMetricCardShared(
+      context,
+      title: title,
+      value: value,
+      icon: icon,
+      color: color,
+      radius: 14,
+      borderColor: Colors.white.withValues(alpha: 0.05),
+      iconSize: 22,
+      valueSize: 18,
+      titleGap: 4,
+    );
+  }
+
+  Widget _buildMobileLeadCard(BuildContext context, AxonLeadModel lead, Color statusCol) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.fromLTRB(12, 12, 6, 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF252538),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: statusCol.withValues(alpha: 0.15),
+                child: Icon(Icons.business_rounded, color: statusCol, size: 18),
               ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lead.companyName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      '${lead.clientName}  \u2022  ${lead.phone}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusCol.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: statusCol.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  lead.status.label,
+                  style: TextStyle(color: statusCol, fontSize: 10.5, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        lead.softwarePackage,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        lead.territory,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white38, fontSize: 11.5),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        _formatLkr(lead.quotedPriceLkr),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Color(0xFF2EC4B6), fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      Text(
+                        'Agent: ${lead.agentName.isNotEmpty ? lead.agentName : "Field Agent"}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white38, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.phone_outlined, size: 20, color: Color(0xFF00B4D8)),
+                tooltip: 'Call Client',
+                onPressed: () => _launchCall(lead.phone),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.chat_outlined, size: 20, color: Color(0xFF25D366)),
+                tooltip: 'WhatsApp Client',
+                onPressed: () => _launchWhatsApp(lead.phone, lead.clientName, lead.companyName),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.info_outline, size: 20, color: Colors.white70),
+                tooltip: 'View Details',
+                onPressed: () => _showLeadDetailsDialog(context, lead),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.delete_outline, size: 20, color: Color(0xFFEF476F)),
+                tooltip: 'Delete Lead',
+                onPressed: () => _confirmDeleteLead(context, lead),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -347,9 +573,9 @@ class _LeadsManagementViewState extends ConsumerState<LeadsManagementView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // KPI Summary Row
-            Row(
-              children: [
-                _buildMetricCard('Total Opportunities', total.toString(), Icons.assignment_outlined, const Color(0xFF6C63FF)),
+            ResponsiveMetricRow(
+          children: [
+            _buildMetricCard('Total Opportunities', total.toString(), Icons.assignment_outlined, const Color(0xFF6C63FF)),
                 const SizedBox(width: 14),
                 _buildMetricCard('Active Pipeline Value', _formatLkr(pipelineVal), Icons.trending_up, const Color(0xFFFFB703)),
                 const SizedBox(width: 14),
@@ -368,9 +594,9 @@ class _LeadsManagementViewState extends ConsumerState<LeadsManagementView> {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
               ),
-              child: Row(
-                children: [
-                  Expanded(
+              child: ResponsiveFilterBar(
+          children: [
+            Expanded(
                     child: TextField(
                       style: const TextStyle(color: Colors.white, fontSize: 13),
                       decoration: InputDecoration(
@@ -403,6 +629,7 @@ class _LeadsManagementViewState extends ConsumerState<LeadsManagementView> {
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
+                        isExpanded: isMobileLayout(context),
                         value: _selectedStatusFilter,
                         dropdownColor: const Color(0xFF1E1E2C),
                         style: const TextStyle(color: Colors.white, fontSize: 13),
@@ -443,6 +670,7 @@ class _LeadsManagementViewState extends ConsumerState<LeadsManagementView> {
                         final lead = filtered[index];
                         final statusCol = _getStatusColor(lead.status);
 
+                        if (isMobileLayout(context)) return _buildMobileLeadCard(context, lead, statusCol);
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
@@ -474,7 +702,9 @@ class _LeadsManagementViewState extends ConsumerState<LeadsManagementView> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      ' • ',
+                                      '${lead.clientName}  \u2022  ${lead.phone}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(color: Colors.white54, fontSize: 12),
                                     ),
                                   ],
@@ -550,6 +780,11 @@ class _LeadsManagementViewState extends ConsumerState<LeadsManagementView> {
                                     icon: const Icon(Icons.info_outline, size: 18, color: Colors.white70),
                                     tooltip: 'View Details',
                                     onPressed: () => _showLeadDetailsDialog(context, lead),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF476F)),
+                                    tooltip: 'Delete Lead',
+                                    onPressed: () => _confirmDeleteLead(context, lead),
                                   ),
                                 ],
                               ),

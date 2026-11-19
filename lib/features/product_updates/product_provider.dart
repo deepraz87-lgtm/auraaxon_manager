@@ -11,7 +11,10 @@ final productStreamProvider = StreamProvider<List<ProductModel>>((ref) {
     final List<ProductModel> products = [];
     for (final doc in snapshot.docs) {
       try {
-        final data = (doc.data() as Map<String, dynamic>?) ?? {};
+        final data = Map<String, dynamic>.from(doc.data());
+        if (!data.containsKey('id') || data['id'] == null || data['id'].toString().isEmpty) {
+          data['id'] = doc.id;
+        }
         products.add(ProductModel.fromJson(data));
       } catch (e) {
         print('Skipping document ${doc.id} due to error: $e');

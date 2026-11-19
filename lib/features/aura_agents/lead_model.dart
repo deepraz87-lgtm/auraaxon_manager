@@ -19,6 +19,9 @@ enum AxonLeadStatus {
 }
 
 class AxonLeadModel {
+  bool get hasCoordinates => latitude != null && longitude != null && latitude != 0.0 && longitude != 0.0;
+  String get mapsUrl => hasCoordinates ? 'https://www.google.com/maps?q=$latitude,$longitude' : '';
+  String get coordinatesDisplay => hasCoordinates ? '${latitude!.toStringAsFixed(5)}, ${longitude!.toStringAsFixed(5)}' : '';
   final String id;
   final String agentId;
   final String agentName;
@@ -31,6 +34,9 @@ class AxonLeadModel {
   final double quotedPriceLkr;
   final AxonLeadStatus status;
   final String notes;
+  final double? latitude;
+  final double? longitude;
+  final String? locationAddress;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -47,6 +53,9 @@ class AxonLeadModel {
     required this.quotedPriceLkr,
     required this.status,
     this.notes = '',
+    this.latitude,
+    this.longitude,
+    this.locationAddress,
     required this.createdAt,
     DateTime? updatedAt,
   }) : updatedAt = updatedAt ?? createdAt;
@@ -81,6 +90,9 @@ class AxonLeadModel {
       quotedPriceLkr: (map['quotedPriceLkr'] as num?)?.toDouble() ?? 0.0,
       status: AxonLeadStatus.fromString((map['status'] ?? 'newLead').toString()),
       notes: (map['notes'] ?? '').toString(),
+      latitude: (map['latitude'] as num?)?.toDouble(),
+      longitude: (map['longitude'] as num?)?.toDouble(),
+      locationAddress: map['locationAddress']?.toString(),
       createdAt: created,
       updatedAt: updated,
     );

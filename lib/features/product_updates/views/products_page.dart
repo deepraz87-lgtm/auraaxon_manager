@@ -45,7 +45,7 @@ class ProductsPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      value: selectedCategory,
+                      initialValue: selectedCategory,
                       dropdownColor: const Color(0xFF252538),
                       decoration: const InputDecoration(labelText: 'Category'),
                       style: const TextStyle(color: Colors.white),
@@ -214,7 +214,22 @@ class ProductsPage extends ConsumerWidget {
                 border: Border.all(color: Colors.white12),
               ),
               child: productsAsync.when(
-                data: (products) => SingleChildScrollView(
+                data: (products) {
+                  if (products.isEmpty) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.inventory_2_outlined, size: 64, color: Colors.white38),
+                          SizedBox(height: 16),
+                          Text('No products found', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                          SizedBox(height: 8),
+                          Text('Click "Add Product" to create one', style: TextStyle(color: Colors.white38, fontSize: 13)),
+                        ],
+                      ),
+                    );
+                  }
+                  return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.vertical,
@@ -246,7 +261,7 @@ class ProductsPage extends ConsumerWidget {
                           DataCell(Text(product.id)),
                           DataCell(Text(product.name)),
                           DataCell(Text(product.version)),
-                          DataCell(Text('\$${product.monthlyFee.toStringAsFixed(2)}')),
+                          DataCell(Text('\${product.monthlyFee.toStringAsFixed(2)}')),
                           DataCell(Text(product.releaseDate)),
                           DataCell(
                             Text(
@@ -263,8 +278,9 @@ class ProductsPage extends ConsumerWidget {
                     }).toList(),
                   ),
                 ),
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
+              );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, stack) => Center(
                   child: Text(
                     'Error: $error',

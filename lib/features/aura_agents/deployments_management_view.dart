@@ -1,4 +1,6 @@
+import 'aura_agent_firebase_service.dart';
 import 'package:flutter/material.dart';
+import 'responsive_helpers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'setup_model.dart';
 import 'agent_provider.dart';
@@ -162,12 +164,26 @@ class _DeploymentsManagementViewState extends ConsumerState<DeploymentsManagemen
                 ),
               ],
               const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Close', style: TextStyle(color: Colors.white70)),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _confirmDeleteSetup(context, task);
+                    },
+                    icon: const Icon(Icons.delete_outline, size: 15, color: Color(0xFFEF476F)),
+                    label: const Text('Delete Deployment', style: TextStyle(color: Color(0xFFEF476F), fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFEF476F)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Close', style: TextStyle(color: Colors.white70)),
+                  ),
+                ],
               ),
             ],
           ),
@@ -176,49 +192,198 @@ class _DeploymentsManagementViewState extends ConsumerState<DeploymentsManagemen
     );
   }
 
-  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF252538),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-        ),
-        child: Row(
+  void _confirmDeleteSetup(BuildContext context, AxonSetupModel setup) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF252538),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
+                color: const Color(0xFFEF476F).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, color: color, size: 22),
+              child: const Icon(Icons.delete_forever_rounded, color: Color(0xFFEF476F), size: 24),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Delete Deployment',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
           ],
         ),
+        content: Text(
+          'Are you sure you want to permanently delete the deployment record for "${setup.companyName}" (${setup.targetSoftwareVersion})?',
+          style: const TextStyle(color: Colors.white70, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await AuraAgentFirebaseService.deleteSetup(setup.id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Deployment for "${setup.companyName}" deleted successfully.'),
+                    backgroundColor: const Color(0xFFEF476F),
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.delete, size: 16),
+            label: const Text('Delete Deployment'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF476F),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
+    return buildMetricCardShared(
+      context,
+      title: title,
+      value: value,
+      icon: icon,
+      color: color,
+      radius: 14,
+      borderColor: Colors.white.withValues(alpha: 0.05),
+      iconSize: 22,
+      valueSize: 18,
+      titleGap: 4,
+    );
+  }
+
+  Widget _buildMobileSetupCard(
+    BuildContext context,
+    AxonSetupModel setup,
+    Color statusCol,
+    int completedCount,
+    int totalItems,
+    double progress,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.fromLTRB(12, 12, 8, 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF252538),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: statusCol.withValues(alpha: 0.15),
+                child: Icon(Icons.rocket_launch_outlined, color: statusCol, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      setup.companyName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      setup.targetSoftwareVersion,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusCol.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: statusCol.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  setup.status.label,
+                  style: TextStyle(color: statusCol, fontSize: 10.5, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Checklist Progress: $completedCount/$totalItems',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '(${(progress * 100).toInt()}%)',
+                      style: TextStyle(color: statusCol, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: Colors.white10,
+                    valueColor: AlwaysStoppedAnimation<Color>(statusCol),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _showChecklistDialog(context, setup),
+                icon: const Icon(Icons.checklist, size: 16, color: Color(0xFF2EC4B6)),
+                label: const Text('Checklist', style: TextStyle(color: Color(0xFF2EC4B6), fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF2EC4B6)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                ),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.delete_outline, size: 20, color: Color(0xFFEF476F)),
+                tooltip: 'Delete Deployment',
+                onPressed: () => _confirmDeleteSetup(context, setup),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -256,9 +421,9 @@ class _DeploymentsManagementViewState extends ConsumerState<DeploymentsManagemen
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // KPI Cards
-            Row(
-              children: [
-                _buildMetricCard('Total Deployments', total.toString(), Icons.rocket_launch_outlined, const Color(0xFF6C63FF)),
+            ResponsiveMetricRow(
+          children: [
+            _buildMetricCard('Total Deployments', total.toString(), Icons.rocket_launch_outlined, const Color(0xFF6C63FF)),
                 const SizedBox(width: 14),
                 _buildMetricCard('In Progress Setups', inProgress.toString(), Icons.engineering_outlined, const Color(0xFF00B4D8)),
                 const SizedBox(width: 14),
@@ -275,9 +440,9 @@ class _DeploymentsManagementViewState extends ConsumerState<DeploymentsManagemen
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
               ),
-              child: Row(
-                children: [
-                  Expanded(
+              child: ResponsiveFilterBar(
+          children: [
+            Expanded(
                     child: TextField(
                       style: const TextStyle(color: Colors.white, fontSize: 13),
                       decoration: InputDecoration(
@@ -310,6 +475,7 @@ class _DeploymentsManagementViewState extends ConsumerState<DeploymentsManagemen
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
+                        isExpanded: isMobileLayout(context),
                         value: _selectedStatusFilter,
                         dropdownColor: const Color(0xFF1E1E2C),
                         style: const TextStyle(color: Colors.white, fontSize: 13),
@@ -353,6 +519,9 @@ class _DeploymentsManagementViewState extends ConsumerState<DeploymentsManagemen
                         final totalItems = setup.checklist.length;
                         final progress = setup.progress;
 
+                        if (isMobileLayout(context)) {
+                          return _buildMobileSetupCard(context, setup, statusCol, completedCount, totalItems, progress);
+                        }
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
@@ -447,6 +616,12 @@ class _DeploymentsManagementViewState extends ConsumerState<DeploymentsManagemen
                                   side: const BorderSide(color: Color(0xFF2EC4B6)),
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF476F)),
+                                tooltip: 'Delete Deployment',
+                                onPressed: () => _confirmDeleteSetup(context, setup),
                               ),
                             ],
                           ),

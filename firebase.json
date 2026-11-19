@@ -23,6 +23,24 @@
         ]
       },
       {
+        "source": "/flutter_bootstrap.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/main.dart.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
         "source": "/index.html",
         "headers": [
           {
@@ -64,5 +82,8 @@
         }
       }
     }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }

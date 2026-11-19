@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/bot_agent_model.dart';
 import '../providers/aura_ops_providers.dart';
@@ -6,6 +6,8 @@ import 'widgets/bot_card.dart';
 import 'widgets/task_tile.dart';
 import 'widgets/bridge_settings_dialog.dart';
 import 'widgets/dispatch_task_dialog.dart';
+import '../../live_voice/widgets/live_voice_floating_button.dart';
+import '../../live_voice/views/live_voice_session_modal.dart';
 
 class AuraOperationsHubPage extends ConsumerStatefulWidget {
   const AuraOperationsHubPage({super.key});
@@ -68,9 +70,9 @@ class _AuraOperationsHubPageState extends ConsumerState<AuraOperationsHubPage>
       builder: (ctx) => BridgeSettingsDialog(
         storage: storage,
         onSaved: () {
-          ref.invalidate(bridgeConnectedProvider);
           ref.read(botRosterProvider.notifier).refresh();
           ref.read(botTasksProvider.notifier).refresh();
+          ref.read(botIncidentsProvider.notifier).refresh();
         },
       ),
     );
@@ -78,173 +80,191 @@ class _AuraOperationsHubPageState extends ConsumerState<AuraOperationsHubPage>
 
   @override
   Widget build(BuildContext context) {
-    final rosterAsync = ref.watch(botRosterProvider);
+    final botsAsync = ref.watch(botRosterProvider);
     final tasksAsync = ref.watch(botTasksProvider);
     final incidentsAsync = ref.watch(botIncidentsProvider);
-    final bridgeConnectedAsync = ref.watch(bridgeConnectedProvider);
-
-    final isBridgeConnected = bridgeConnectedAsync.asData?.value ?? false;
-
-    final bots = rosterAsync.asData?.value ?? [];
-    final tasks = tasksAsync.asData?.value ?? [];
-    final incidents = incidentsAsync.asData?.value ?? [];
-
-    final activeBotsCount =
-        bots.where((b) => b.status == BotStatus.running).length;
-    final activeTasksCount =
-        tasks.where((t) => t.status == TaskStatus.inProgress).length;
-    final unresolvedIncidentsCount =
-        incidents.where((i) => !i.resolved).length;
 
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E2C),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF252538),
-        elevation: 0,
-        title: const Row(
-          children: [
-            Icon(Icons.hub_outlined, color: Color(0xFF6C63FF)),
-            SizedBox(width: 8),
-            Text(
-              'Aura AI Operations Hub',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-          ],
-        ),
-        actions: [
-          // Bridge status pill
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: isBridgeConnected
-                  ? Colors.green.withValues(alpha: 0.2)
-                  : Colors.amber.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isBridgeConnected ? Colors.green : Colors.amber,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.circle,
-                  size: 8,
-                  color: isBridgeConnected ? Colors.greenAccent : Colors.amberAccent,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  isBridgeConnected ? 'Live Bridge' : 'Local Fallback',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isBridgeConnected ? Colors.greenAccent : Colors.amberAccent,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'Bridge Settings',
-            onPressed: _openSettingsDialog,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh Status',
-            onPressed: () {
-              ref.invalidate(bridgeConnectedProvider);
-              ref.read(botRosterProvider.notifier).refresh();
-              ref.read(botTasksProvider.notifier).refresh();
-              ref.read(botIncidentsProvider.notifier).refresh();
-            },
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const LiveVoiceFloatingButton(),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'dispatchTaskBtn',
+            backgroundColor: const Color(0xFF252538),
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.add_task),
+            label: const Text('Dispatch Task'),
+            onPressed: () => _openDispatchDialog(),
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: const Color(0xFF6C63FF),
-          indicatorWeight: 3,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white60,
-          tabs: [
-            Tab(
-              icon: const Icon(Icons.groups_outlined),
-              text: 'Team (${bots.length})',
-            ),
-            Tab(
-              icon: const Icon(Icons.task_alt_outlined),
-              text: 'Tasks (${tasks.length})',
-            ),
-            Tab(
-              icon: const Icon(Icons.warning_amber_outlined),
-              text: 'Incidents ($unresolvedIncidentsCount)',
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openDispatchDialog(),
-        backgroundColor: const Color(0xFF6C63FF),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_task),
-        label: const Text('Dispatch Task'),
       ),
       body: Column(
         children: [
-          // KPI Metric Header
+          // Header
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: const Color(0xFF252538).withValues(alpha: 0.6),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            color: const Color(0xFF252538),
             child: Row(
               children: [
-                _buildKpiCard('Online Bots', '${bots.length}', Icons.smart_toy,
-                    const Color(0xFF6C63FF)),
+                Image.asset(
+                  'assets/images/auraaxon_icon.png',
+                  width: 38,
+                  height: 38,
+                ),
+                const SizedBox(width: 12),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Aura Operations Hub',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      'Operations Director & Specialist Bot Roster',
+                      style: TextStyle(fontSize: 12, color: Colors.white54),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                OutlinedButton.icon(
+                  onPressed: () => LiveVoiceSessionModal.show(context),
+                  icon: const Icon(Icons.record_voice_over, size: 18, color: Color(0xFF6C63FF)),
+                  label: const Text('Live Voice', style: TextStyle(color: Color(0xFF6C63FF))),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF6C63FF)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
                 const SizedBox(width: 8),
-                _buildKpiCard('Active Jobs', '$activeTasksCount', Icons.flash_on,
-                    Colors.greenAccent),
-                const SizedBox(width: 8),
-                _buildKpiCard('Running Bots', '$activeBotsCount', Icons.sync,
-                    Colors.lightBlueAccent),
-                const SizedBox(width: 8),
-                _buildKpiCard('Incidents', '$unresolvedIncidentsCount',
-                    Icons.report_problem_outlined,
-                    unresolvedIncidentsCount > 0 ? Colors.redAccent : Colors.grey),
+                IconButton(
+                  icon: const Icon(Icons.settings, color: Colors.white70),
+                  tooltip: 'Bridge Settings',
+                  onPressed: _openSettingsDialog,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, color: Colors.white70),
+                  tooltip: 'Refresh All',
+                  onPressed: () {
+                    ref.read(botRosterProvider.notifier).refresh();
+                    ref.read(botTasksProvider.notifier).refresh();
+                    ref.read(botIncidentsProvider.notifier).refresh();
+                  },
+                ),
               ],
             ),
           ),
-          // Tab views
+
+          // Overview Status Bar / KPIs
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: const Color(0xFF202030),
+            child: Row(
+              children: [
+                _buildKpiCard(
+                  'Total Bots',
+                  botsAsync.asData?.value.length.toString() ?? '-',
+                  Icons.smart_toy_outlined,
+                  Colors.blueAccent,
+                ),
+                const SizedBox(width: 8),
+                _buildKpiCard(
+                  'Active Tasks',
+                  tasksAsync.asData?.value
+                          .where((t) => t.status == TaskStatus.inProgress)
+                          .length
+                          .toString() ??
+                      '-',
+                  Icons.pending_actions,
+                  Colors.orangeAccent,
+                ),
+                const SizedBox(width: 8),
+                _buildKpiCard(
+                  'Incidents',
+                  incidentsAsync.asData?.value
+                          .where((i) => !i.resolved)
+                          .length
+                          .toString() ??
+                      '-',
+                  Icons.warning_amber_outlined,
+                  Colors.redAccent,
+                ),
+              ],
+            ),
+          ),
+
+          // Navigation Tabs
+          Container(
+            color: const Color(0xFF252538),
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: const Color(0xFF6C63FF),
+              labelColor: const Color(0xFF6C63FF),
+              unselectedLabelColor: Colors.white54,
+              tabs: const [
+                Tab(
+                  icon: Icon(Icons.groups_outlined),
+                  text: 'Bot Roster',
+                ),
+                Tab(
+                  icon: Icon(Icons.task_alt_outlined),
+                  text: 'Tasks & Threads',
+                ),
+                Tab(
+                  icon: Icon(Icons.warning_amber_outlined),
+                  text: 'Incidents',
+                ),
+              ],
+            ),
+          ),
+
+          // Tab Views
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                // 1. Team Roster Tab
-                rosterAsync.when(
+                // 1. Bot Roster Tab
+                botsAsync.when(
                   data: (botList) => RefreshIndicator(
                     onRefresh: () async {
                       await ref.read(botRosterProvider.notifier).refresh();
                     },
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(12),
-                      itemCount: botList.length,
-                      itemBuilder: (ctx, idx) {
-                        final bot = botList[idx];
-                        return BotCard(
-                          bot: bot,
-                          onAssignTask: () => _openDispatchDialog(bot.id),
-                        );
-                      },
-                    ),
+                    child: botList.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No bots registered in roster.\nConfigure Bridge Settings.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.white54),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(12),
+                            itemCount: botList.length,
+                            itemBuilder: (ctx, idx) {
+                              final bot = botList[idx];
+                              return BotCard(
+                                bot: bot,
+                                onAssignTask: () => _openDispatchDialog(bot.id),
+                              );
+                            },
+                          ),
                   ),
                   loading: () => const Center(
                     child: CircularProgressIndicator(color: Color(0xFF6C63FF)),
                   ),
                   error: (err, _) => Center(
-                    child: Text('Error loading bots: $err',
+                    child: Text('Error loading bots: ',
                         style: const TextStyle(color: Colors.redAccent)),
                   ),
                 ),
 
-                // 2. Tasks Tab
+                // 2. Tasks & Threads Tab
                 tasksAsync.when(
                   data: (taskList) => RefreshIndicator(
                     onRefresh: () async {
@@ -253,22 +273,24 @@ class _AuraOperationsHubPageState extends ConsumerState<AuraOperationsHubPage>
                     child: taskList.isEmpty
                         ? const Center(
                             child: Text(
-                              'No recent tasks dispatched.',
+                              'No active tasks found.',
                               style: TextStyle(color: Colors.white54),
                             ),
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.all(12),
                             itemCount: taskList.length,
-                            itemBuilder: (ctx, idx) =>
-                                TaskTile(task: taskList[idx]),
+                            itemBuilder: (ctx, idx) {
+                              final task = taskList[idx];
+                              return TaskTile(task: task);
+                            },
                           ),
                   ),
                   loading: () => const Center(
                     child: CircularProgressIndicator(color: Color(0xFF6C63FF)),
                   ),
                   error: (err, _) => Center(
-                    child: Text('Error loading tasks: $err',
+                    child: Text('Error loading tasks: ',
                         style: const TextStyle(color: Colors.redAccent)),
                   ),
                 ),
@@ -386,7 +408,7 @@ class _AuraOperationsHubPageState extends ConsumerState<AuraOperationsHubPage>
                     child: CircularProgressIndicator(color: Color(0xFF6C63FF)),
                   ),
                   error: (err, _) => Center(
-                    child: Text('Error loading incidents: $err',
+                    child: Text('Error loading incidents: ',
                         style: const TextStyle(color: Colors.redAccent)),
                   ),
                 ),
@@ -439,3 +461,4 @@ class _AuraOperationsHubPageState extends ConsumerState<AuraOperationsHubPage>
     );
   }
 }
+

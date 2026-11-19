@@ -67,14 +67,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(
-                Icons.admin_panel_settings,
-                size: 64,
-                color: Color(0xFF6C63FF),
-              ),
+              Center(child: Image.asset('assets/images/auraaxon_logo.png', height: 120, fit: BoxFit.contain)),
               const SizedBox(height: 24),
               Text(
-                'Auraaxon Manager',
+                'AuraAxon Manager',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 24,
@@ -175,3 +171,4 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 }
+

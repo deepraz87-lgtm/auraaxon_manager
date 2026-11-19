@@ -1,6 +1,9 @@
 ﻿import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisteredAgentModel {
+  bool get hasCoordinates => latitude != null && longitude != null && latitude != 0.0 && longitude != 0.0;
+  String get mapsUrl => hasCoordinates ? 'https://www.google.com/maps?q=$latitude,$longitude' : '';
+  String get coordinatesDisplay => hasCoordinates ? '${latitude!.toStringAsFixed(5)}, ${longitude!.toStringAsFixed(5)}' : '';
   final String id;
   final String agentId;
   final String agentPin;
@@ -17,6 +20,10 @@ class RegisteredAgentModel {
   final int certificationLevel;
   final bool isPasskeyEnabled;
   final String passkeyPin;
+  final Map<String, dynamic>? pendingIdRequest;
+  final double? latitude;
+  final double? longitude;
+  final String? registrationLocation;
 
   RegisteredAgentModel({
     required this.id,
@@ -35,6 +42,10 @@ class RegisteredAgentModel {
     this.certificationLevel = 0,
     this.isPasskeyEnabled = false,
     this.passkeyPin = '',
+    this.pendingIdRequest,
+    this.latitude,
+    this.longitude,
+    this.registrationLocation,
   });
 
   /// Display ID: Prefer official agentId if present, else fallback to AGT-XXXXX from UID
@@ -49,11 +60,23 @@ class RegisteredAgentModel {
   }
 
   /// Display PIN: agentPin or passkeyPin if available
+  bool get isAgentManager => role == 'Agent Manager';
+  bool get isSetupAgent => role == 'Sales & Setup Agent' || role == 'Agent Manager';
+
   String get displayPin {
     if (agentPin.trim().isNotEmpty) return agentPin.trim();
     if (passkeyPin.trim().isNotEmpty) return passkeyPin.trim();
     return '';
   }
+
+  bool get hasPendingIdRequest {
+    if (pendingIdRequest == null) return false;
+    final stat = (pendingIdRequest!['status'] ?? '').toString().toLowerCase();
+    return stat == 'pending';
+  }
+
+  String? get pendingRequestedId =>
+      pendingIdRequest != null ? pendingIdRequest!['requestedAgentId']?.toString() : null;
 
   RegisteredAgentModel copyWith({
     String? id,
@@ -72,6 +95,7 @@ class RegisteredAgentModel {
     int? certificationLevel,
     bool? isPasskeyEnabled,
     String? passkeyPin,
+    Map<String, dynamic>? pendingIdRequest,
   }) {
     return RegisteredAgentModel(
       id: id ?? this.id,
@@ -90,6 +114,7 @@ class RegisteredAgentModel {
       certificationLevel: certificationLevel ?? this.certificationLevel,
       isPasskeyEnabled: isPasskeyEnabled ?? this.isPasskeyEnabled,
       passkeyPin: passkeyPin ?? this.passkeyPin,
+      pendingIdRequest: pendingIdRequest ?? this.pendingIdRequest,
     );
   }
 
@@ -101,7 +126,7 @@ class RegisteredAgentModel {
       name: (name.trim().isNotEmpty && name != 'Unnamed Agent') ? name : other.name,
       email: (email.trim().isNotEmpty && email != 'No email') ? email : other.email,
       phone: (phone.trim().isNotEmpty && phone != 'No phone') ? phone : other.phone,
-      role: (role.trim().isNotEmpty && role != 'Sales Agent') ? role : other.role,
+      role: role.trim().isNotEmpty ? role : other.role,
       territory: (territory.trim().isNotEmpty && territory != 'Sri Lanka') ? territory : other.territory,
       bio: bio.trim().isNotEmpty ? bio : other.bio,
       createdAt: createdAt ?? other.createdAt,
@@ -111,6 +136,7 @@ class RegisteredAgentModel {
       certificationLevel: certificationLevel > 0 ? certificationLevel : other.certificationLevel,
       isPasskeyEnabled: isPasskeyEnabled || other.isPasskeyEnabled,
       passkeyPin: passkeyPin.isNotEmpty ? passkeyPin : other.passkeyPin,
+      pendingIdRequest: pendingIdRequest ?? other.pendingIdRequest,
     );
   }
 
@@ -130,6 +156,17 @@ class RegisteredAgentModel {
     final rawName = data['name'] ?? data['displayName'] ?? 'Unnamed Agent';
     final rawAgentId = data['agentId'] ?? data['agent_id'] ?? '';
     final rawPin = data['agentPin'] ?? data['agent_pin'] ?? data['passkeyPin'] ?? data['pin'] ?? '';
+    final lat = (data['latitude'] as num?)?.toDouble();
+    final lng = (data['longitude'] as num?)?.toDouble();
+    final regLoc = data['registrationLocation']?.toString();
+
+    Map<String, dynamic>? pendingReq;
+    if (data['pendingIdRequest'] is Map) {
+      pendingReq = Map<String, dynamic>.from(data['pendingIdRequest'] as Map);
+      if (data['pendingIdRequest.status'] != null) {
+        pendingReq['status'] = data['pendingIdRequest.status'].toString();
+      }
+    }
 
     return RegisteredAgentModel(
       id: doc.id,
@@ -148,6 +185,10 @@ class RegisteredAgentModel {
       certificationLevel: (data['certificationLevel'] as num?)?.toInt() ?? 0,
       isPasskeyEnabled: data['isPasskeyEnabled'] == true,
       passkeyPin: (data['passkeyPin'] ?? '').toString().trim(),
+      pendingIdRequest: pendingReq,
+      latitude: lat,
+      longitude: lng,
+      registrationLocation: regLoc,
     );
   }
 
@@ -168,6 +209,7 @@ class RegisteredAgentModel {
       'certificationLevel': certificationLevel,
       'isPasskeyEnabled': isPasskeyEnabled,
       'passkeyPin': passkeyPin,
+      if (pendingIdRequest != null) 'pendingIdRequest': pendingIdRequest,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
     };
   }
