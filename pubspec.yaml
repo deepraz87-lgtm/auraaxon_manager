@@ -48,7 +48,7 @@ dependencies:
   web_socket_channel: ^3.0.3
   audioplayers: ^6.8.1
   firebase_messaging: ^16.7.1
-  flutter_local_notifications: ^23.0.3
+  flutter_local_notifications: 18.0.1
   flutter_background_service: ^5.1.0
 
 dev_dependencies:

@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.example.auraaxon_manager"
-    compileSdk = 37
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
