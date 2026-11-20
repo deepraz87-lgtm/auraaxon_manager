@@ -576,6 +576,10 @@ class _AgentsManagementPageState extends ConsumerState<AgentsManagementPage> {
                       ),
                     ],
                     const SizedBox(height: 10),
+                    if (agent.nic.isNotEmpty) ...[
+                      _detailRow(Icons.badge_outlined, 'National ID (NIC)', agent.nic),
+                      const SizedBox(height: 10),
+                    ],
                     _detailRow(Icons.phone_outlined, 'Phone', agent.phone),
                     const SizedBox(height: 10),
                     _detailRow(Icons.email_outlined, 'Email', agent.email),
@@ -755,6 +759,31 @@ class _AgentsManagementPageState extends ConsumerState<AgentsManagementPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
+                        if (currentStatus == 'Pending Verification') ...[
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              setDialogState(() => currentStatus = 'Active');
+                              await AuraAgentFirebaseService.updateAgentStatus(agent.id, 'Active');
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('${agent.name} approved & activated!'),
+                                    backgroundColor: const Color(0xFF10B981),
+                                  ),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.check_circle_outline, size: 16),
+                            label: const Text('Approve & Activate', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
                         if (agent.phone.isNotEmpty && agent.phone != 'No phone') ...[
                           OutlinedButton.icon(
                             onPressed: () => _launchCall(agent.phone),
@@ -1031,6 +1060,7 @@ class _AgentsManagementPageState extends ConsumerState<AgentsManagementPage> {
                   ),
               ],
             ),
+            if (agent.nic.isNotEmpty) infoRow(Icons.badge_outlined, 'NIC: ${agent.nic}'),
             infoRow(Icons.location_on_outlined, agent.territory),
             infoRow(Icons.phone_outlined, agent.phone),
             infoRow(Icons.email_outlined, agent.email),
@@ -1038,6 +1068,30 @@ class _AgentsManagementPageState extends ConsumerState<AgentsManagementPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                if (agent.status == 'Pending Verification') ...[
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      await AuraAgentFirebaseService.updateAgentStatus(agent.id, 'Active');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${agent.name} approved & activated!'),
+                            backgroundColor: const Color(0xFF10B981),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.check_circle_outline, size: 14),
+                    label: const Text('Approve & Activate', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
                 if (hasPhone) ...[
                   IconButton(
                     visualDensity: VisualDensity.compact,
@@ -1389,6 +1443,18 @@ class _AgentsManagementPageState extends ConsumerState<AgentsManagementPage> {
                                   ),
                                 ],
                               ),
+                              if (agent.nic.isNotEmpty)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.badge_outlined, size: 14, color: Color(0xFF38BDF8)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'NIC: ${agent.nic}',
+                                      style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 13, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -1417,6 +1483,30 @@ class _AgentsManagementPageState extends ConsumerState<AgentsManagementPage> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            if (agent.status == 'Pending Verification') ...[
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  await AuraAgentFirebaseService.updateAgentStatus(agent.id, 'Active');
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('${agent.name} approved & activated!'),
+                                        backgroundColor: const Color(0xFF10B981),
+                                      ),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.check_circle_outline, size: 15),
+                                label: const Text('Approve & Activate', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF10B981),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
                             if (agent.phone.isNotEmpty && agent.phone != 'No phone') ...[
                               IconButton(
                                 icon: const Icon(Icons.phone_outlined, color: Color(0xFF00B4D8)),

@@ -542,7 +542,7 @@ class _NotificationsModalState extends ConsumerState<NotificationsModal> {
                               const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  if (notif.agentUid.isNotEmpty)
+                                  if (notif.agentUid.isNotEmpty) ...[
                                     OutlinedButton.icon(
                                       onPressed: () {
                                         AuraAgentFirebaseService.markNotificationAsRead(notif.id);
@@ -550,15 +550,40 @@ class _NotificationsModalState extends ConsumerState<NotificationsModal> {
                                         widget.onViewAgent?.call(notif.agentUid);
                                       },
                                       icon: const Icon(Icons.arrow_forward_rounded, size: 14),
-                                      label: const Text('View Agent', style: TextStyle(fontSize: 11.5)),
+                                      label: const Text("View", style: TextStyle(fontSize: 11.5)),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: const Color(0xFF6C63FF),
                                         side: const BorderSide(color: Color(0xFF6C63FF)),
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         visualDensity: VisualDensity.compact,
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                       ),
                                     ),
+                                    const SizedBox(width: 6),
+                                    ElevatedButton.icon(
+                                      onPressed: () async {
+                                        await AuraAgentFirebaseService.updateAgentStatus(notif.agentUid, "Active");
+                                        await AuraAgentFirebaseService.markNotificationAsRead(notif.id);
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text("${notif.agentName.isNotEmpty ? notif.agentName : "Agent"} approved & activated!"),
+                                              backgroundColor: const Color(0xFF10B981),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      icon: const Icon(Icons.check_circle_outline, size: 14),
+                                      label: const Text("Approve & Activate", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF10B981),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        visualDensity: VisualDensity.compact,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                    ),
+                                  ],
                                   const Spacer(),
                                   if (isUnread)
                                     IconButton(

@@ -10,6 +10,7 @@ class RegisteredAgentModel {
   final String name;
   final String email;
   final String phone;
+  final String nic;
   final String role; // 'Sales Agent' or 'Sales & Setup Agent'
   final String territory; // location / territory
   final String bio;
@@ -33,6 +34,7 @@ class RegisteredAgentModel {
     required this.email,
     required this.phone,
     required this.role,
+    this.nic = '',
     this.territory = 'Sri Lanka',
     this.bio = '',
     this.createdAt,
@@ -61,6 +63,7 @@ class RegisteredAgentModel {
 
   /// Display PIN: agentPin or passkeyPin if available
   bool get isAgentManager => role == 'Agent Manager';
+  bool get isPendingVerification => status.toLowerCase() == 'pending verification';
   bool get isSetupAgent => role == 'Sales & Setup Agent' || role == 'Agent Manager';
 
   String get displayPin {
@@ -85,6 +88,7 @@ class RegisteredAgentModel {
     String? name,
     String? email,
     String? phone,
+    String? nic,
     String? role,
     String? territory,
     String? bio,
@@ -104,6 +108,7 @@ class RegisteredAgentModel {
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      nic: nic ?? this.nic,
       role: role ?? this.role,
       territory: territory ?? this.territory,
       bio: bio ?? this.bio,
@@ -126,6 +131,7 @@ class RegisteredAgentModel {
       name: (name.trim().isNotEmpty && name != 'Unnamed Agent') ? name : other.name,
       email: (email.trim().isNotEmpty && email != 'No email') ? email : other.email,
       phone: (phone.trim().isNotEmpty && phone != 'No phone') ? phone : other.phone,
+      nic: nic.trim().isNotEmpty ? nic : other.nic,
       role: role.trim().isNotEmpty ? role : other.role,
       territory: (territory.trim().isNotEmpty && territory != 'Sri Lanka') ? territory : other.territory,
       bio: bio.trim().isNotEmpty ? bio : other.bio,
@@ -175,6 +181,7 @@ class RegisteredAgentModel {
       name: rawName.toString().trim(),
       email: (data['email'] ?? 'No email').toString().trim(),
       phone: (data['phone'] ?? 'No phone').toString().trim(),
+      nic: (data['nic'] ?? '').toString().trim(),
       role: (data['role'] ?? 'Sales Agent').toString().trim(),
       territory: terr.toString().trim().isEmpty ? 'Sri Lanka' : terr.toString().trim(),
       bio: (data['bio'] ?? '').toString().trim(),
@@ -199,6 +206,7 @@ class RegisteredAgentModel {
       'name': name,
       'email': email,
       'phone': phone,
+      'nic': nic,
       'role': role,
       'territory': territory,
       'location': territory,

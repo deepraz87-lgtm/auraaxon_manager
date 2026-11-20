@@ -10,6 +10,7 @@ class ManagerNotificationModel {
   final String agentName;
   final String agentEmail;
   final String agentPhone;
+  final String nic;
   final String territory;
   final bool read;
   final DateTime createdAt;
@@ -24,6 +25,7 @@ class ManagerNotificationModel {
     this.agentName = '',
     this.agentEmail = '',
     this.agentPhone = '',
+    this.nic = '',
     this.territory = '',
     this.read = false,
     required this.createdAt,
@@ -48,6 +50,7 @@ class ManagerNotificationModel {
       agentName: (data['agentName'] ?? '').toString(),
       agentEmail: (data['agentEmail'] ?? '').toString(),
       agentPhone: (data['agentPhone'] ?? '').toString(),
+      nic: (data['nic'] ?? '').toString(),
       territory: (data['territory'] ?? '').toString(),
       read: data['read'] == true,
       createdAt: dt,
