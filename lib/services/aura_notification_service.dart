@@ -32,10 +32,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   final notification = message.notification;
   if (notification != null) {
     await flutterLocalNotificationsPlugin.show(
-      id: message.hashCode,
-      title: notification.title ?? 'AuraAxon Alert',
-      body: notification.body ?? '',
-      notificationDetails: NotificationDetails(
+      message.hashCode,
+      notification.title ?? 'AuraAxon Alert',
+      notification.body ?? '',
+      NotificationDetails(
         android: AndroidNotificationDetails(
           highImportanceChannel.id,
           highImportanceChannel.name,
@@ -65,7 +65,7 @@ void onBackgroundServiceStart(ServiceInstance service) async {
 
   final FlutterLocalNotificationsPlugin localPlugin = FlutterLocalNotificationsPlugin();
   const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-  await localPlugin.initialize(settings: const InitializationSettings(android: androidInit));
+  await localPlugin.initialize(const InitializationSettings(android: androidInit));
 
   final prefs = await SharedPreferences.getInstance();
   int lastNotifTime = prefs.getInt('last_processed_notif_time') ?? DateTime.now().millisecondsSinceEpoch - 60000;
@@ -94,10 +94,10 @@ void onBackgroundServiceStart(ServiceInstance service) async {
         final body = (data['message'] ?? 'New notification received in AuraAxon Manager.').toString();
 
         await localPlugin.show(
-          id: notifId.hashCode,
-          title: title,
-          body: body,
-          notificationDetails: NotificationDetails(
+          notifId.hashCode,
+          title,
+          body,
+          NotificationDetails(
             android: AndroidNotificationDetails(
               highImportanceChannel.id,
               highImportanceChannel.name,
@@ -140,7 +140,7 @@ class AuraNotificationService {
     // 1. Android notification channel & local notifications setup
     const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const InitializationSettings initSettings = InitializationSettings(android: androidInit);
-    await flutterLocalNotificationsPlugin.initialize(settings: initSettings);
+    await flutterLocalNotificationsPlugin.initialize(initSettings);
 
     final androidPlatformPlugin = flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
@@ -164,10 +164,10 @@ class AuraNotificationService {
         final notif = message.notification;
         if (notif != null) {
           flutterLocalNotificationsPlugin.show(
-            id: message.hashCode,
-            title: notif.title ?? 'AuraAxon Alert',
-            body: notif.body ?? '',
-            notificationDetails: NotificationDetails(
+            message.hashCode,
+            notif.title ?? 'AuraAxon Alert',
+            notif.body ?? '',
+            NotificationDetails(
               android: AndroidNotificationDetails(
                 highImportanceChannel.id,
                 highImportanceChannel.name,
