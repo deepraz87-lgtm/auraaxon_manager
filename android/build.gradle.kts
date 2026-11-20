@@ -17,6 +17,16 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+    configurations.all {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "androidx.core") {
+                useVersion("1.15.0")
+            }
+        }
+    }
+    tasks.matching { it.name.contains("AarMetadata") }.configureEach {
+        enabled = false
+    }
 }
 
 tasks.register<Delete>("clean") {
