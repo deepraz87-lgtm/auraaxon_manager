@@ -33,7 +33,7 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
     _imageController = TextEditingController(text: widget.product.imageUrl);
     
     _selectedCategory = widget.product.category.isNotEmpty ? widget.product.category : 'Software';
-    if (!['Software', 'Hardware'].contains(_selectedCategory)) {
+    if (!['Hardware', 'Software', 'Accessory', 'Bundle'].contains(_selectedCategory)) {
       _selectedCategory = 'Software';
     }
 
@@ -151,7 +151,7 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
                       dropdownColor: const Color(0xFF252538),
                       decoration: const InputDecoration(labelText: 'Category', enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white54))),
                       style: const TextStyle(color: Colors.white),
-                      items: ['Software', 'Hardware']
+                      items: ['Hardware', 'Software', 'Accessory', 'Bundle']
                           .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                           .toList(),
                       onChanged: (val) {

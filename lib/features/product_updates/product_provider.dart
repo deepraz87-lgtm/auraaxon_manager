@@ -5,9 +5,7 @@ import 'product_api_service.dart';
 
 // Live stream of products from Firestore
 final productStreamProvider = StreamProvider<List<ProductModel>>((ref) {
-  return FirebaseFirestore.instance.collection('products').snapshots().map((
-    snapshot,
-  ) {
+  return FirebaseFirestore.instance.collection('products').snapshots().map((snapshot) {
     final List<ProductModel> products = [];
     for (final doc in snapshot.docs) {
       try {
@@ -38,6 +36,10 @@ class ProductController {
     required double monthlyFee,
     required String description,
     required String imageUrl,
+    String warranty = '',
+    String specs = '',
+    String condition = 'Brand New',
+    List<Map<String, dynamic>> variants = const [],
   }) async {
     try {
       final newId = 'API-PRD-${DateTime.now().millisecondsSinceEpoch}';
@@ -53,10 +55,13 @@ class ProductController {
         'monthly_fee': monthlyFee,
         'description': description,
         'image_url': imageUrl,
+        'warranty': warranty,
+        'specs': specs,
+        'condition': condition,
+        'variants': variants,
       };
 
       await apiService.addProduct(productData);
-      // No need to invalidate the provider because the stream will automatically emit the new data
     } catch (e) {
       print('Error adding product: $e');
     }

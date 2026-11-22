@@ -14,7 +14,7 @@ class ProductsPage extends ConsumerWidget {
     final monthlyFeeController = TextEditingController();
     final descController = TextEditingController();
     final imageController = TextEditingController();
-    String selectedCategory = 'Software';
+    String selectedCategory = 'Hardware';
 
     showDialog(
       context: context,
@@ -49,7 +49,7 @@ class ProductsPage extends ConsumerWidget {
                       dropdownColor: const Color(0xFF252538),
                       decoration: const InputDecoration(labelText: 'Category'),
                       style: const TextStyle(color: Colors.white),
-                      items: ['Software', 'Hardware']
+                      items: ['Hardware', 'Software', 'Accessory', 'Bundle']
                           .map(
                             (c) => DropdownMenuItem(value: c, child: Text(c)),
                           )
