@@ -1,3 +1,4 @@
+import '../../services/aura_notification_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -98,6 +99,43 @@ class AuraAgentFirebaseService {
 
     try {
       await FirebaseFirestore.instance.collection('agents').doc(agentId).update({'status': newStatus});
+    } catch (_) {}
+
+    // When an agent is approved/activated (hired), clear their registration notifications
+    if (newStatus.trim().toLowerCase() == 'active' || newStatus.trim().toLowerCase() == 'approved') {
+      await clearNotificationsForAgent(agentId);
+    }
+  }
+
+  static Future<void> clearNotificationsForAgent(String agentId) async {
+    final cleanId = agentId.trim();
+    if (cleanId.isEmpty) return;
+
+    Future<void> clearFromDb(FirebaseFirestore db) async {
+      try {
+        final notifs = await db.collection('manager_notifications').get();
+        for (final doc in notifs.docs) {
+          final data = doc.data();
+          final uid = (data['agentUid'] ?? '').toString().trim();
+          final aId = (data['agentId'] ?? '').toString().trim();
+
+          if (uid == cleanId || aId == cleanId || doc.id == cleanId) {
+            await doc.reference.delete();
+            AuraNotificationService.cancelNotification(doc.id);
+          }
+        }
+      } catch (e) {
+        debugPrint('Error clearing notifications for agent $cleanId: $e');
+      }
+    }
+
+    try {
+      final secFirestore = await getFirestore();
+      await clearFromDb(secFirestore);
+    } catch (_) {}
+
+    try {
+      await clearFromDb(FirebaseFirestore.instance);
     } catch (_) {}
   }
 
@@ -353,5 +391,7 @@ class AuraAgentFirebaseService {
     } catch (e) {
       debugPrint('Error deleting notification from local DB: $e');
     }
+
+    AuraNotificationService.cancelNotification(notifId);
   }
 }

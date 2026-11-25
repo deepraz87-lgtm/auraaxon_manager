@@ -71,18 +71,17 @@ void onBackgroundServiceStart(ServiceInstance service) async {
   final prefs = await SharedPreferences.getInstance();
   int lastNotifTime = prefs.getInt('last_processed_notif_time') ?? DateTime.now().millisecondsSinceEpoch - 60000;
 
-  // Listen to manager_notifications in real-time
+  // Listen to manager_notifications in real-time (detect additions, modifications, and removals)
   FirebaseFirestore.instance
       .collection('manager_notifications')
-      .where('read', isEqualTo: false)
       .snapshots()
       .listen((snapshot) async {
     for (final change in snapshot.docChanges) {
+      final notifId = change.doc.id;
       if (change.type == DocumentChangeType.added) {
         final data = change.doc.data();
-        if (data == null) continue;
+        if (data == null || data['read'] == true) continue;
 
-        final notifId = change.doc.id;
         final processedKey = 'notif_seen_$notifId';
         if (prefs.getBool(processedKey) == true) continue;
 
@@ -117,6 +116,13 @@ void onBackgroundServiceStart(ServiceInstance service) async {
 
         await prefs.setBool(processedKey, true);
         await prefs.setInt('last_processed_notif_time', timeMillis);
+      } else if (change.type == DocumentChangeType.removed) {
+        await localPlugin.cancel(notifId.hashCode);
+      } else if (change.type == DocumentChangeType.modified) {
+        final data = change.doc.data();
+        if (data != null && data['read'] == true) {
+          await localPlugin.cancel(notifId.hashCode);
+        }
       }
     }
   }, onError: (err) {
@@ -126,6 +132,16 @@ void onBackgroundServiceStart(ServiceInstance service) async {
 
 class AuraNotificationService {
   static bool _initialized = false;
+
+  static Future<void> cancelNotification(String notifId) async {
+    try {
+      if (!kIsWeb) {
+        await flutterLocalNotificationsPlugin.cancel(notifId.hashCode);
+      }
+    } catch (e) {
+      debugPrint('Cancel notification note: $e');
+    }
+  }
 
   static Future<void> initialize() async {
     if (_initialized) return;
@@ -192,6 +208,28 @@ class AuraNotificationService {
       await messaging.subscribeToTopic('auraaxon_managers');
     } catch (e) {
       debugPrint('FCM Mobile init note: $e');
+    }
+
+    // Realtime cancellation listener for dismissed/read notifications
+    try {
+      FirebaseFirestore.instance
+          .collection('manager_notifications')
+          .snapshots()
+          .listen((snapshot) {
+        for (final change in snapshot.docChanges) {
+          final notifId = change.doc.id;
+          if (change.type == DocumentChangeType.removed) {
+            flutterLocalNotificationsPlugin.cancel(notifId.hashCode);
+          } else if (change.type == DocumentChangeType.modified) {
+            final data = change.doc.data();
+            if (data != null && data['read'] == true) {
+              flutterLocalNotificationsPlugin.cancel(notifId.hashCode);
+            }
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint('Foreground notification dismiss listener note: $e');
     }
 
     // 3. Start Background Service

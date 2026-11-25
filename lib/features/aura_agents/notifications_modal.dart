@@ -562,8 +562,9 @@ class _NotificationsModalState extends ConsumerState<NotificationsModal> {
                                     const SizedBox(width: 6),
                                     ElevatedButton.icon(
                                       onPressed: () async {
-                                        await AuraAgentFirebaseService.updateAgentStatus(notif.agentUid, "Active");
-                                        await AuraAgentFirebaseService.markNotificationAsRead(notif.id);
+                                        final targetAgentId = notif.agentUid.isNotEmpty ? notif.agentUid : notif.agentId;
+                                        await AuraAgentFirebaseService.updateAgentStatus(targetAgentId, "Active");
+                                        await AuraAgentFirebaseService.deleteNotification(notif.id);
                                         if (context.mounted) {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
