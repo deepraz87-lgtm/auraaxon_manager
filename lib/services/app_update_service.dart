@@ -137,8 +137,16 @@ class AppUpdateService {
               ElevatedButton.icon(
                 onPressed: () async {
                   final uri = Uri.parse(apkUrl);
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  try {
+                    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    if (!launched) {
+                      await launchUrl(uri, mode: LaunchMode.platformDefault);
+                    }
+                  } catch (e) {
+                    debugPrint('Launch URL error: $e');
+                    try {
+                      await launchUrl(uri, mode: LaunchMode.platformDefault);
+                    } catch (_) {}
                   }
                 },
                 icon: const Icon(Icons.download_rounded, size: 16),
